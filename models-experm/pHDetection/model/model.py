@@ -107,7 +107,7 @@ best_ph = None
 best_color = None
 
 for ph, (color_label, ref) in ph_reference.items():
-    dist = np.linalg.norm(avg_lab - ref)
+    dist = np.linalg.norm(avg_lab[1:] - ref[1:])
     if dist < min_dist:
         min_dist = dist
         best_ph = ph
