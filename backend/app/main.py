@@ -6,7 +6,7 @@ from datetime import date, timedelta
 
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 try:
@@ -14,6 +14,7 @@ try:
     from .crop_recommender import CropRecommender
     from .ph_detector import PHDetector
     from .fertilizer_recommender import FertilizerRecommender
+    from .disease_detector import DiseaseDetector
     from .providers import FeatureProviders
     from .schemas import (
         FEATURE_NAMES,
@@ -28,6 +29,7 @@ try:
         PHDetectionResponse,
         FertilizerRecommendationRequest,
         FertilizerRecommendationResponse,
+        DiseaseDetectionResponse,
     )
 except ImportError:
     # Allows running this file directly via `python main.py` from the app directory.
@@ -45,6 +47,7 @@ except ImportError:
     from app.crop_recommender import CropRecommender
     from app.ph_detector import PHDetector
     from app.fertilizer_recommender import FertilizerRecommender
+    from app.disease_detector import DiseaseDetector
     from app.providers import FeatureProviders
     from app.schemas import (
         FEATURE_NAMES,
@@ -59,6 +62,7 @@ except ImportError:
         PHDetectionResponse,
         FertilizerRecommendationRequest,
         FertilizerRecommendationResponse,
+        DiseaseDetectionResponse,
     )
 
 
@@ -83,6 +87,7 @@ predictor = YieldPredictor()
 recommender = CropRecommender()
 ph_detector = PHDetector()
 fertilizer_recommender = FertilizerRecommender()
+disease_detector = DiseaseDetector()
 
 
 @app.get("/health")
@@ -265,6 +270,22 @@ async def recommend_fertilizer(payload: FertilizerRecommendationRequest) -> Fert
         notes=result.get("notes")
     )
 
+@app.post("/v1/disease/detect", response_model=DiseaseDetectionResponse)
+async def detect_disease(file: UploadFile = File(...)):
+    """
+    Detects plant disease from an uploaded image.
+    """
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File uploaded is not an image.")
+    
+    contents = await file.read()
+    disease, confidence = disease_detector.predict(contents)
+    
+    return DiseaseDetectionResponse(
+        disease=disease,
+        confidence=confidence,
+        status="ok"
+    )
 
 if __name__ == "__main__":
     import uvicorn

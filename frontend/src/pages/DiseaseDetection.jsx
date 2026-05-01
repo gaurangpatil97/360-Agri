@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 
-export default function PlantDiseaseDetection() {
+export default function DiseaseDetection() {
   const [image, setImage] = useState(null)
   const [preview, setPreview] = useState(null)
   const [result, setResult] = useState(null)
@@ -67,7 +67,7 @@ export default function PlantDiseaseDetection() {
   return (
     <div className="page-content">
       <div className="page-header">
-        <p className="eyebrow">Module 04</p>
+        <p className="eyebrow">Module 05</p>
         <h1>Plant Disease Detection</h1>
         <p className="subtext">Identify crop diseases instantly using AI-powered vision analysis.</p>
       </div>
@@ -151,13 +151,13 @@ export default function PlantDiseaseDetection() {
 
           {result && !loading && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 12 }}>
-              <div className={`result-card ${result.disease.toLowerCase().includes('healthy') ? 'accent-green' : 'accent-red'}`}>
+              <div className={`result-card ${result.disease.includes('healthy') ? 'accent-green' : 'accent-red'}`}>
                 <p className="result-label">Detected Status</p>
                 <p className="result-big" style={{ fontSize: '1.4rem' }}>{formatName(result.disease)}</p>
                 
                 <div style={{ marginTop: 15, display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
-                    <div style={{ height: '100%', background: result.disease.toLowerCase().includes('healthy') ? '#8bc34a' : '#ef5350', width: `${result.confidence * 100}%`, borderRadius: 3 }}></div>
+                    <div style={{ height: '100%', background: result.disease.includes('healthy') ? '#8bc34a' : '#ef5350', width: `${result.confidence * 100}%`, borderRadius: 3 }}></div>
                   </div>
                   <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{Math.round(result.confidence * 100)}% Match</span>
                 </div>
@@ -166,7 +166,7 @@ export default function PlantDiseaseDetection() {
               <div style={{ padding: 20, background: 'rgba(255,255,255,0.03)', borderRadius: 16 }}>
                 <p style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 12 }}>Recommendations</p>
                 <ul style={{ paddingLeft: 18, fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {result.disease.toLowerCase().includes('healthy') ? (
+                  {result.disease.includes('healthy') ? (
                     <>
                       <li>Continue regular monitoring and maintenance.</li>
                       <li>Maintain current irrigation and fertilization schedules.</li>

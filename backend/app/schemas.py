@@ -142,3 +142,9 @@ class FertilizerRecommendationResponse(BaseModel):
     input_received: dict[str, Any]
     model_name: str = "Fertilizer Recommendation (Improved Voting Ensemble)"
     notes: str | None = None
+
+
+class DiseaseDetectionResponse(BaseModel):
+    disease: str
+    confidence: float
+    status: str = "ok"
