@@ -1,8 +1,9 @@
 import os
+import io
 import numpy as np
 import tensorflow as tf
 from PIL import Image
-import io
+import keras
 
 class DiseaseDetector:
     def __init__(self):
@@ -21,12 +22,18 @@ class DiseaseDetector:
             'Tomato___Spider_mites Two-spotted_spider_mite', 'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus', 'Tomato___healthy'
         ]
         
+        print(f"[INFO] Keras version: {keras.__version__}")
+        
         if os.path.exists(self.model_path):
             try:
-                self.model = tf.keras.models.load_model(self.model_path)
+                # Use keras directly for V3 models
+                self.model = keras.models.load_model(self.model_path)
                 print(f"[OK] Plant disease model loaded: {self.model_path}")
             except Exception as e:
-                print(f"[ERROR] Failed to load plant disease model: {e}")
+                print(f"[ERROR] Failed to load plant disease model.")
+                print(f"Error details: {e}")
+                if "Permission denied" in str(e) and os.path.isdir(self.model_path):
+                    print("TIP: This often happens if you are using an older version of Keras/TensorFlow to load a Keras 3 directory model. Upgrading to Keras 3+ should fix this.")
         else:
             print(f"[WARNING] Plant disease model not found at {self.model_path}")
 

@@ -30,3 +30,5 @@ earthengine-api
 google-auth
 tensorflow
 Pillow
+python-multipart
+keras
