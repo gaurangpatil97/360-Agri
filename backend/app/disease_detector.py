@@ -4,10 +4,15 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 import keras
+import shutil
 
 class DiseaseDetector:
     def __init__(self):
-        self.model_path = r"c:\Users\tanvi\Desktop\gp\360-Agri\models-experm\plant disease detection\plant_disease_model.keras"
+        # The target file path
+        self.model_file = r"c:\Users\tanvi\Desktop\gp\360-Agri\models-experm\plant disease detection\plant_disease_model.keras"
+        # If it happens to be a directory (common on some saves), we'll zip it to a file
+        self.model_dir = self.model_file
+        
         self.img_size = (224, 224)
         self.model = None
         self.class_names = [
@@ -24,18 +29,31 @@ class DiseaseDetector:
         
         print(f"[INFO] Keras version: {keras.__version__}")
         
-        if os.path.exists(self.model_path):
+        # Windows fix: If it's a directory, Keras load_model often fails with Permission Denied.
+        # We'll zip it into a .keras file (which is just a zip of the contents).
+        if os.path.exists(self.model_dir) and os.path.isdir(self.model_dir):
+            temp_zip = self.model_dir + "_temp"
+            if not os.path.exists(self.model_file + ".bak"): # Don't redo if already handled or file exists
+                print(f"[INFO] Detected model directory. Converting to Keras V3 archive file...")
+                try:
+                    # Zip the CONTENTS of the directory
+                    shutil.make_archive(temp_zip, 'zip', self.model_dir)
+                    # Move the folder aside and put the zip in its place with .keras extension
+                    os.rename(self.model_dir, self.model_dir + ".bak")
+                    os.rename(temp_zip + ".zip", self.model_file)
+                    print(f"[OK] Converted directory to archive: {self.model_file}")
+                except Exception as e:
+                    print(f"[ERROR] Failed to convert model directory: {e}")
+
+        if os.path.exists(self.model_file) and os.path.isfile(self.model_file):
             try:
-                # Use keras directly for V3 models
-                self.model = keras.models.load_model(self.model_path)
-                print(f"[OK] Plant disease model loaded: {self.model_path}")
+                self.model = keras.models.load_model(self.model_file, compile=False)
+                print(f"[OK] Plant disease model loaded successfully.")
             except Exception as e:
                 print(f"[ERROR] Failed to load plant disease model.")
                 print(f"Error details: {e}")
-                if "Permission denied" in str(e) and os.path.isdir(self.model_path):
-                    print("TIP: This often happens if you are using an older version of Keras/TensorFlow to load a Keras 3 directory model. Upgrading to Keras 3+ should fix this.")
         else:
-            print(f"[WARNING] Plant disease model not found at {self.model_path}")
+            print(f"[WARNING] Model file not found at {self.model_file}")
 
     def predict(self, image_bytes):
         if self.model is None:
