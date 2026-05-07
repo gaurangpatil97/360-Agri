@@ -1,3 +1,7 @@
+# ============================================================
+# Python
+# ============================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
@@ -70,7 +74,7 @@ docs/_build/
 target/
 
 # Jupyter Notebook
-.ipynb_checkpoints
+.ipynb_checkpoints/
 
 # pyenv
 .python-version
@@ -81,46 +85,91 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# mypy
+.mypy_cache/
+
+# ============================================================
+# Virtual Environments  ← venv / agrienv lives here
+# ============================================================
 .env
 .venv
+.venv*/
 env/
 venv/
+venv*/
 ENV/
 env.bak/
 venv.bak/
 tenv/
 
-# Spyder project settings
-.spyderproject
-.spyproject
+# Project-specific venv (agrienv)
+agrienv/
 
-# Rope project settings
-.ropeproject
+# ============================================================
+# Environment / Secrets
+# ============================================================
+*.env
+.env.*
+.env.local
+.env.*.local
+secrets.json
+config/secrets.*
 
-# mkdocs documentation
-/site
+# ============================================================
+# ML / AI — Model weights & data
+# ============================================================
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.bin
+*.weights
+models-experm/
 
-# mypy
-.mypy_cache/
+# Large dataset / upload folders (uncomment if needed)
+# data/
+# datasets/
+# uploads/
 
+# ============================================================
 # Node / Frontend
+# ============================================================
 node_modules/
 frontend/node_modules/
-dist/
+frontend/.next/
+frontend/out/
+frontend/build/
 frontend/dist/
-build/
 .npm
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
+.next/
+out/
 
+# ============================================================
 # OS specific
+# ============================================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# IDEs
+# ============================================================
+# IDEs & Editors
+# ============================================================
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace

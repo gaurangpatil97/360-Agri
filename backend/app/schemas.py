@@ -95,8 +95,19 @@ class CropRecommendationResponse(BaseModel):
     notes: str
 
 
+class PolygonPoint(BaseModel):
+    x: float = Field(ge=0, description="X coordinate in original image pixels")
+    y: float = Field(ge=0, description="Y coordinate in original image pixels")
+
+
 class PHDetectionRequest(BaseModel):
     image_base64: str = Field(description="Base64-encoded image of pH strip")
+    points: list[PolygonPoint] | None = Field(
+        default=None,
+        min_length=4,
+        max_length=4,
+        description="Optional 4-point polygon ROI in original image coordinates",
+    )
     roi_x: int | None = Field(default=None, description="Optional ROI x coordinate")
     roi_y: int | None = Field(default=None, description="Optional ROI y coordinate")
     roi_w: int | None = Field(default=None, description="Optional ROI width")

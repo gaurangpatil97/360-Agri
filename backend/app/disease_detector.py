@@ -1,13 +1,21 @@
-import os
 import io
+import logging
+import os
+from pathlib import Path
+import tempfile
+import zipfile
+
 import numpy as np
 import tensorflow as tf
 from PIL import Image
 import keras
 
+
+logger = logging.getLogger(__name__)
+
 class DiseaseDetector:
     def __init__(self):
-        self.model_path = r"c:\Users\tanvi\Desktop\gp\360-Agri\models-experm\plant disease detection\plant_disease_model.keras"
+        self.model_path = self._resolve_model_path()
         self.img_size = (224, 224)
         self.model = None
         self.class_names = [
@@ -22,49 +30,94 @@ class DiseaseDetector:
             'Tomato___Spider_mites Two-spotted_spider_mite', 'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus', 'Tomato___healthy'
         ]
         
-        print(f"[INFO] Keras version: {keras.__version__}")
-        
-        if os.path.exists(self.model_path):
-            try:
-                # Use keras directly for V3 models
-                self.model = keras.models.load_model(self.model_path)
-                print(f"[OK] Plant disease model loaded: {self.model_path}")
-            except Exception as e:
-                print(f"[ERROR] Failed to load plant disease model.")
-                print(f"Error details: {e}")
-                if "Permission denied" in str(e) and os.path.isdir(self.model_path):
-                    print("TIP: This often happens if you are using an older version of Keras/TensorFlow to load a Keras 3 directory model. Upgrading to Keras 3+ should fix this.")
-        else:
-            print(f"[WARNING] Plant disease model not found at {self.model_path}")
+        logger.info("Keras version: %s", keras.__version__)
+        logger.info("Resolved plant disease model path: %s", self.model_path if self.model_path is not None else "<missing>")
+
+        if self.model_path is None:
+            logger.warning("Plant disease model not found. The disease endpoint will return a clear error until the artifact is present.")
+            return
+
+        try:
+            self.model = self._load_keras_model(self.model_path)
+            logger.info("Plant disease model loaded successfully from %s", self.model_path)
+        except Exception:
+            logger.exception("Failed to load plant disease model from %s", self.model_path)
+
+    def _load_keras_model(self, model_path: Path):
+        if model_path.is_file():
+            return keras.saving.load_model(str(model_path), compile=False)
+
+        temp_archive: Path | None = None
+        try:
+            temp_file = tempfile.NamedTemporaryFile(suffix=".keras", delete=False)
+            temp_file.close()
+            temp_archive = Path(temp_file.name)
+
+            with zipfile.ZipFile(temp_archive, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for item in model_path.rglob("*"):
+                    if item.is_file():
+                        archive.write(item, arcname=item.relative_to(model_path).as_posix())
+
+            return keras.saving.load_model(str(temp_archive), compile=False)
+        finally:
+            if temp_archive is not None and temp_archive.exists():
+                try:
+                    temp_archive.unlink()
+                except OSError:
+                    logger.warning("Could not remove temporary Keras archive: %s", temp_archive)
+
+    def _resolve_model_path(self) -> Path | None:
+        """Resolve the actual Keras model artifact path.
+
+        The repository stores the disease model as a Keras v3 directory artifact.
+        Some exports create a nested folder with the same name, so we look for the
+        first directory that actually contains the Keras metadata files.
+        """
+        env_path = os.getenv("DISEASE_MODEL_PATH") or os.getenv("MODEL_PATH")
+        if env_path:
+            candidate = Path(env_path).expanduser()
+            if self._is_loadable_model_path(candidate):
+                return candidate.resolve()
+            return None
+
+        project_root = Path(__file__).resolve().parents[2]
+        base_dir = project_root / "models-experm" / "plant disease detection"
+        direct_candidate = base_dir / "plant_disease_model.keras"
+        nested_candidate = direct_candidate / "plant_disease_model.keras"
+
+        for candidate in (direct_candidate, nested_candidate):
+            if self._is_loadable_model_path(candidate):
+                return candidate.resolve()
+
+        return None
+
+    @staticmethod
+    def _is_loadable_model_path(candidate: Path) -> bool:
+        if candidate.is_file():
+            return True
+
+        if candidate.is_dir():
+            required_files = {"config.json", "metadata.json", "model.weights.h5"}
+            existing = {item.name for item in candidate.iterdir()}
+            if required_files.issubset(existing):
+                return True
+
+        return False
 
     def predict(self, image_bytes):
         if self.model is None:
-            return "Model not loaded", 0.0
+            raise RuntimeError("Plant disease model is not loaded. Check the model artifact path and startup logs.")
 
-        # Preprocess image
-        img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        try:
+            img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        except Exception as exc:
+            raise ValueError(f"Invalid image data: {exc}") from exc
+
         img = img.resize(self.img_size)
-        img_array = tf.keras.preprocessing.image.img_to_array(img)
+        img_array = tf.keras.utils.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
-        
-        # The model in notebook uses:
-        # x = layers.Rescaling(1./127.5, offset=-1)(x)
-        # This is handled INSIDE the model if it was part of the Sequential/Functional definition.
-        # Looking at the notebook:
-        # inputs = tf.keras.Input(shape=(224, 224, 3))
-        # x = data_augmentation(inputs)
-        # x = layers.Rescaling(1./127.5, offset=-1)(x)
-        # x = base_model(x, training=False)
-        # ...
-        # Yes, Rescaling is part of the model. We just pass raw 0-255 pixels.
 
         predictions = self.model.predict(img_array)
-        score = tf.nn.softmax(predictions[0])
-        
-        # Actually, the model uses 'softmax' activation in the last Dense layer:
-        # outputs = layers.Dense(NUM_CLASSES, activation='softmax', dtype='float32')(x)
-        # So 'predictions[0]' is already probabilities.
-        
         class_idx = np.argmax(predictions[0])
         confidence = float(predictions[0][class_idx])
         

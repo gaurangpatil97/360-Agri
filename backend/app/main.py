@@ -231,9 +231,13 @@ async def detect_ph(payload: PHDetectionRequest) -> PHDetectionResponse:
     try:
         import base64
         image_bytes = base64.b64decode(payload.image_base64)
+        points = None
+        if payload.points:
+            points = [{"x": point.x, "y": point.y} for point in payload.points]
         
         ph_value, confidence, metadata = ph_detector.detect(
             image_bytes=image_bytes,
+            points=points,
             x=payload.roi_x,
             y=payload.roi_y,
             w=payload.roi_w,
@@ -275,12 +279,17 @@ async def detect_disease(file: UploadFile = File(...)):
     """
     Detects plant disease from an uploaded image.
     """
-    if not file.content_type.startswith("image/"):
+    if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File uploaded is not an image.")
-    
-    contents = await file.read()
-    disease, confidence = disease_detector.predict(contents)
-    
+
+    try:
+        contents = await file.read()
+        disease, confidence = disease_detector.predict(contents)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
     return DiseaseDetectionResponse(
         disease=disease,
         confidence=confidence,
