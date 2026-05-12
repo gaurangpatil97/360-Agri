@@ -16,6 +16,12 @@ Those are best fetched from Sentinel-2 reflectance and computed server-side, whi
 
 If Sentinel Hub credentials are not configured, the endpoint still works and returns other features while flagging missing index features.
 
+## Earth Engine project access
+
+If you use Google Earth Engine for satellite features, set `EARTHENGINE_PROJECT_ID` to a Google Cloud project that your account can access.
+
+If you see a 403 like `USER_PROJECT_DENIED`, the caller needs `roles/serviceusage.serviceUsageConsumer` on that project, or Earth Engine initialization will fall back to the non-satellite features and return a warning.
+
 ## Prediction model integration (your trained model)
 
 The `/v1/yield/predict` endpoint now uses your serialized model package (`best_model.pkl`) and applies preprocessing aligned to your training script:

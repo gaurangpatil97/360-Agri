@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
@@ -34,9 +35,16 @@ class FeatureProviders:
         if not HAS_GEE:
             raise RuntimeError("Install earthengine-api")
 
-        satellite = await self._fetch_satellite_indices_gee(
-            lat, lon, start_date, end_date
-        )
+        try:
+            satellite = await self._fetch_satellite_indices_gee(
+                lat, lon, start_date, end_date
+            )
+        except RuntimeError as exc:
+            return ProviderResult(
+                values={"crop_type": crop_type},
+                sources={"crop_type": {"provider": "farmer_input", "status": "ok"}},
+                warnings=[str(exc)],
+            )
 
         return ProviderResult(
             values={**satellite.values, "crop_type": crop_type},
@@ -223,17 +231,21 @@ class FeatureProviders:
         if self._gee_initialized:
             return
 
-        PROJECT_ID = "total-amp-457118-j7"
+        project_id = os.getenv("EARTHENGINE_PROJECT_ID", "total-amp-457118-j7")
 
         try:
             try:
-                ee.Initialize(project=PROJECT_ID)
+                ee.Initialize(project=project_id)
             except Exception:
                 ee.Authenticate()
-                ee.Initialize(project=PROJECT_ID)
+                ee.Initialize(project=project_id)
 
             self._gee_initialized = True
             print("✅ GEE initialized")
 
         except Exception as e:
-            raise RuntimeError(f"GEE init failed: {e}")
+            raise RuntimeError(
+                "GEE init failed. Set EARTHENGINE_PROJECT_ID to a project you can access, "
+                "or grant the caller roles/serviceusage.serviceUsageConsumer on the current project. "
+                f"Original error: {e}"
+            )
