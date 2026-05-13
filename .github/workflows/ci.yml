@@ -23,11 +23,9 @@ jobs:
         working-directory: backend
         run: pip install -r requirements.txt
 
-      - name: Check imports
+      - name: Check syntax
         working-directory: backend
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python -c "from app.main import app; print('Imports OK')"
+        run: python -m py_compile app/main.py app/middleware.py app/monitoring.py && echo "Syntax OK"
 
       - name: Start backend
         working-directory: backend
