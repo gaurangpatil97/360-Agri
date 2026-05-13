@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 try:
     from .chatbot import chat as chatbot_chat
+    from .middleware import log_request
+    from .monitoring import get_stats
     from .predictor import YieldPredictor
     from .crop_recommender import CropRecommender
     from .ph_detector import PHDetector
@@ -47,6 +49,8 @@ except ImportError:
         sys.path.insert(0, str(backend_dir))
 
     from app.chatbot import chat as chatbot_chat
+    from app.middleware import log_request
+    from app.monitoring import get_stats
     from app.predictor import YieldPredictor
     from app.crop_recommender import CropRecommender
     from app.ph_detector import PHDetector
@@ -88,6 +92,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def logging_middleware(request, call_next):
+    import time
+    start = time.time()
+    response = await call_next(request)
+    elapsed = (time.time() - start) * 1000
+
+    # only log API routes
+    if request.url.path.startswith("/v1"):
+        log_request(
+            method=request.method,
+            endpoint=request.url.path,
+            status_code=response.status_code,
+            response_ms=elapsed
+        )
+
+    return response
+
 providers = FeatureProviders()
 predictor = YieldPredictor()
 recommender = CropRecommender()
@@ -99,6 +122,11 @@ disease_detector = DiseaseDetector()
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/v1/monitoring/stats")
+async def monitoring_stats():
+    return get_stats()
 
 
 @app.get("/v1/yield/features/providers")
