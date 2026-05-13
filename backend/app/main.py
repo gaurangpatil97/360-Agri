@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 try:
+    from .chatbot import chat as chatbot_chat
     from .predictor import YieldPredictor
     from .crop_recommender import CropRecommender
     from .ph_detector import PHDetector
@@ -30,6 +31,8 @@ try:
         FertilizerRecommendationRequest,
         FertilizerRecommendationResponse,
         DiseaseDetectionResponse,
+        ChatRequest,
+        ChatResponse,
     )
 except ImportError:
     # Allows running this file directly via `python main.py` from the app directory.
@@ -43,6 +46,7 @@ except ImportError:
     if str(backend_dir) not in sys.path:
         sys.path.insert(0, str(backend_dir))
 
+    from app.chatbot import chat as chatbot_chat
     from app.predictor import YieldPredictor
     from app.crop_recommender import CropRecommender
     from app.ph_detector import PHDetector
@@ -63,6 +67,8 @@ except ImportError:
         FertilizerRecommendationRequest,
         FertilizerRecommendationResponse,
         DiseaseDetectionResponse,
+        ChatRequest,
+        ChatResponse,
     )
 
 
@@ -211,6 +217,22 @@ async def recommend_crop(payload: CropRecommendationRequest) -> CropRecommendati
         model_name=recommender.model_name,
         notes=notes,
     )
+
+
+@app.post("/v1/chat", response_model=ChatResponse)
+async def chat_endpoint(payload: ChatRequest):
+    try:
+        history = [{"role": m.role, "content": m.content} for m in payload.history]
+        reply = chatbot_chat(
+            message=payload.message,
+            history=history,
+            context=payload.context
+        )
+        return ChatResponse(reply=reply)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
 
 @app.post("/v1/ph/detect", response_model=PHDetectionResponse)

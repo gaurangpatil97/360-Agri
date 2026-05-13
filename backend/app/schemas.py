@@ -159,3 +159,19 @@ class DiseaseDetectionResponse(BaseModel):
     disease: str
     confidence: float
     status: str = "ok"
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: list[ChatMessage] = []
+    context: dict = {}
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    model_name: str = "gpt-4o-mini"
