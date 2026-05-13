@@ -5,6 +5,7 @@ import FertilizerRecommendation from './pages/FertilizerRecommendation'
 import PlantDiseaseDetection from './pages/PlantDiseaseDetection'
 import SoilPHDetection from './pages/SoilPHDetection'
 import ChatBot from './pages/ChatBot'
+import Monitoring from './pages/Monitoring'
 
 const NAV = [
   { to: '/yield-prediction',         icon: '🌾', label: 'Yield Prediction' },
@@ -13,6 +14,7 @@ const NAV = [
   { to: '/plant-disease-detection',  icon: '🔬', label: 'Plant Disease Detection' },
   { to: '/soil-ph-detection',        icon: '🧫', label: 'Soil pH Detection' },
   { to: '/ai-agronomist',             icon: '🤖', label: 'AI Agronomist' },
+  { to: '/monitoring',                icon: '📊', label: 'Monitoring' },
 ]
 
 export default function App() {
@@ -54,6 +56,7 @@ export default function App() {
           <Route path="/plant-disease-detection"   element={<PlantDiseaseDetection />} />
           <Route path="/soil-ph-detection"         element={<SoilPHDetection />} />
           <Route path="/ai-agronomist"             element={<ChatBot />} />
+          <Route path="/monitoring"                element={<Monitoring />} />
         </Routes>
       </main>
     </div>

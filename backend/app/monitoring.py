@@ -62,6 +62,34 @@ def get_stats():
         top = cur.fetchone()
         most_active_endpoint = top[0] if top is not None else ""
 
+        # Status code breakdown
+        cur.execute(
+            "SELECT status_code, COUNT(*) as cnt FROM request_logs WHERE method != 'OPTIONS' GROUP BY status_code"
+        )
+        rows = cur.fetchall()
+        status_counts = {str(row[0]): row[1] for row in rows}
+        status_code_breakdown = {
+            code: round((count / total_requests) * 100, 2) if total_requests > 0 else 0.0
+            for code, count in status_counts.items()
+        }
+
+        # Slowest endpoint
+        cur.execute(
+            "SELECT endpoint, AVG(response_ms) as avg_ms FROM request_logs WHERE method != 'OPTIONS' GROUP BY endpoint ORDER BY avg_ms DESC LIMIT 1"
+        )
+        slowest = cur.fetchone()
+        slowest_endpoint = {
+            "endpoint": slowest[0],
+            "avg_ms": round(slowest[1], 2) if slowest and slowest[1] is not None else 0.0
+        } if slowest else {"endpoint": "", "avg_ms": 0.0}
+
+        # Method distribution
+        cur.execute(
+            "SELECT method, COUNT(*) as cnt FROM request_logs WHERE method != 'OPTIONS' GROUP BY method"
+        )
+        rows = cur.fetchall()
+        method_distribution = {row[0]: row[1] for row in rows}
+
         return {
             "total_requests": int(total_requests),
             "requests_per_endpoint": requests_per_endpoint,
@@ -69,6 +97,9 @@ def get_stats():
             "error_rate_percent": float(error_rate_percent),
             "requests_last_7_days": requests_last_7_days,
             "most_active_endpoint": most_active_endpoint,
+            "status_code_breakdown": status_code_breakdown,
+            "slowest_endpoint": slowest_endpoint,
+            "method_distribution": method_distribution,
         }
     finally:
         conn.close()
