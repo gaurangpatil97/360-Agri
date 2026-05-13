@@ -18,14 +18,12 @@ class CropRecommender:
         
         Args:
             model_dir: Directory containing agri_pipeline.pkl and label_encoder.pkl
-                      Defaults to models-experm/crop_recommendation relative to project root
+                      Defaults to models/crop_recommendation relative to repository root
         """
         if model_dir is None:
             # From backend/app/, go up 3 levels to reach 360-Agri (the project root)
             # backend/app -> backend -> 360-Agri
-            backend_dir = Path(__file__).parent.parent  # backend/
-            project_root = backend_dir.parent  # 360-Agri/
-            model_dir = project_root / "models-experm" / "crop_recommendation"
+            model_dir = Path(__file__).parent.parent / "models" / "crop_recommendation"
         
         self.model_dir = Path(model_dir)
         self.pipeline_path = self.model_dir / "agri_pipeline.pkl"

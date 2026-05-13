@@ -80,8 +80,7 @@ class DiseaseDetector:
                 return candidate.resolve()
             return None
 
-        project_root = Path(__file__).resolve().parents[2]
-        base_dir = project_root / "models-experm" / "plant disease detection"
+        base_dir = Path(__file__).resolve().parents[1] / "models" / "plant_disease_detection"
         direct_candidate = base_dir / "plant_disease_model.keras"
         nested_candidate = direct_candidate / "plant_disease_model.keras"
 

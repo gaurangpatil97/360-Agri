@@ -16,11 +16,8 @@ class FertilizerRecommender:
             model_dir: Directory containing fertilizer_pipeline.pkl and label_encoder.pkl
         """
         if model_dir is None:
-            # backend/app -> backend -> 360-Agri
-            backend_dir = Path(__file__).parent.parent
-            project_root = backend_dir.parent
-            model_dir = project_root / "models-experm" / "fertilizer recommendation"
-        
+            model_dir = Path(__file__).parent.parent / "models" / "fertilizer_recommendation"
+
         self.model_dir = Path(model_dir)
         self.pipeline_path = self.model_dir / "fertilizer_pipeline.pkl"
         self.encoder_path = self.model_dir / "label_encoder.pkl"
